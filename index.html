@@ -1,0 +1,1510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Happy Birthday — Interactive Web Experience</title>
+  <!-- Load Tailwind CSS for responsive layout utilities -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Load Google Font Inter & Dancing Script for Polaroids -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-dark: #140814;
+      --rose-1: #ff4d8d;
+      --rose-2: #ff85b3;
+      --gold: #ffd166;
+      --text-light: #fff8fb;
+      --text-dark: #2c1622;
+      --border-glass: rgba(255, 255, 255, 0.18);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-light);
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* Ambient floating sparkle & confetti canvas */
+    #sparkle-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 40;
+    }
+
+    /* Top navigation pill */
+    .topbar {
+      position: fixed;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(20, 8, 20, 0.72);
+      backdrop-filter: blur(14px);
+      border: 1px solid var(--border-glass);
+      max-width: 96vw;
+      overflow-x: auto;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    }
+
+    .step-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.25);
+      border: none;
+      cursor: pointer;
+      transition: transform 0.25s ease, background 0.25s ease;
+      flex-shrink: 0;
+    }
+
+    .step-dot.active {
+      background: var(--rose-1);
+      transform: scale(1.35);
+    }
+
+    .top-btn {
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 999px;
+      padding: 5px 12px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .top-btn:hover {
+      background: rgba(255, 77, 141, 0.4);
+    }
+
+    /* Stage & Scenes */
+    .stage-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    .scene {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 68px 20px 28px;
+      opacity: 0;
+      transition: opacity 0.55s ease;
+      text-align: center;
+      overflow-y: auto;
+    }
+
+    .scene.active {
+      display: flex;
+      opacity: 1;
+    }
+
+    .btn-primary {
+      margin-top: 18px;
+      padding: 12px 26px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+      background: linear-gradient(135deg, var(--rose-1), #ff2e63);
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: 0 10px 28px rgba(255, 77, 141, 0.38);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 14px 34px rgba(255, 77, 141, 0.5);
+    }
+
+    .btn-secondary {
+      margin-top: 12px;
+      padding: 10px 20px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #fff;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.22);
+    }
+
+    /* SCENE 1: Pull & Release Heart */
+    .scene-pull {
+      background: radial-gradient(circle at center, #fff0eb 0%, #f5d8d0 70%, #e7beb5 100%);
+      color: var(--text-dark);
+    }
+
+    .pull-sub {
+      font-size: 15px;
+      letter-spacing: 0.4px;
+      color: #7c4d5b;
+      margin-bottom: 14px;
+    }
+
+    .pull-arena {
+      position: relative;
+      width: 300px;
+      height: 270px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: none;
+    }
+
+    .pull-anchor {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: rgba(255, 77, 141, 0.3);
+      border: 2px dashed rgba(255, 77, 141, 0.6);
+      pointer-events: none;
+    }
+
+    .pull-line {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      height: 3px;
+      background: linear-gradient(90deg, rgba(255, 77, 141, 0.25), rgba(255, 77, 141, 0.9));
+      transform-origin: left center;
+      border-radius: 999px;
+      pointer-events: none;
+      display: none;
+    }
+
+    .heart-orb {
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #ff9ebb, #ff3b7f 65%, #c9185b 100%);
+      box-shadow: 0 16px 40px rgba(255, 59, 127, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 44px;
+      cursor: grab;
+      position: relative;
+      z-index: 3;
+      transition: transform 0.12s ease-out;
+    }
+
+    .heart-orb:active {
+      cursor: grabbing;
+    }
+
+    .pull-hint {
+      margin-top: 12px;
+      font-size: 12px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #8c5a68;
+      font-weight: 600;
+    }
+
+    /* SCENE 2: Make a Wish Banner + Main Portrait Photo */
+    .scene-banner {
+      background: linear-gradient(135deg, #4a081b, #9b1138 48%, #f43f68 100%);
+    }
+
+    .main-photo-frame {
+      position: relative;
+      width: clamp(150px, 34vw, 220px);
+      height: clamp(185px, 42vw, 265px);
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.94);
+      border-radius: 22px;
+      box-shadow: 0 22px 48px rgba(0, 0, 0, 0.36), 0 0 0 6px rgba(255, 255, 255, 0.16);
+      transform: rotate(-2deg);
+      transition: transform 0.35s ease;
+      flex-shrink: 0;
+    }
+
+    .main-photo-frame:hover {
+      transform: rotate(0deg) scale(1.03);
+    }
+
+    .main-photo-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 14px;
+      display: block;
+      background: #f5d0dc;
+    }
+
+    .main-photo-badge {
+      position: absolute;
+      bottom: -12px;
+      right: -10px;
+      background: linear-gradient(135deg, #ffd166, #f77f00);
+      color: #2c1622;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 999px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.28);
+    }
+
+    .wish-kicker {
+      font-size: 14px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      opacity: 0.9;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .wish-title {
+      font-size: clamp(2.1rem, 5.5vw, 4.1rem);
+      font-weight: 800;
+      line-height: 1.08;
+      text-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+      min-height: 1.2em;
+    }
+
+    .wish-caption {
+      margin-top: 12px;
+      font-size: 15px;
+      opacity: 0.94;
+      max-width: 440px;
+    }
+
+    /* SCENE 3: Heart Blossom Tree */
+    .scene-tree {
+      background: radial-gradient(circle at top, #fff3ee 0%, #f6dcd4 65%, #e6c2b8 100%);
+      color: var(--text-dark);
+    }
+
+    .tree-card-left {
+      max-width: 320px;
+      text-align: left;
+      background: rgba(255, 255, 255, 0.78);
+      backdrop-filter: blur(8px);
+      padding: 24px;
+      border-radius: 22px;
+      border: 1px solid rgba(255, 77, 141, 0.22);
+      box-shadow: 0 14px 32px rgba(90, 35, 50, 0.08);
+    }
+
+    .tree-card-left .tag {
+      font-size: 13px;
+      color: #9e4762;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    .tree-card-left h2 {
+      font-size: 1.95rem;
+      font-weight: 800;
+      color: #b5174d;
+      line-height: 1.15;
+      margin-bottom: 10px;
+    }
+
+    .tree-card-left p {
+      font-size: 14px;
+      color: #4d2c37;
+      line-height: 1.5;
+    }
+
+    .tree-visual {
+      position: relative;
+      width: 320px;
+      height: 320px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .tree-trunk {
+      width: 18px;
+      height: 0;
+      background: linear-gradient(to top, #5c3a28, #85583f);
+      border-radius: 10px 10px 0 0;
+      transition: height 1s cubic-bezier(0.22, 1, 0.36, 1);
+      position: relative;
+    }
+
+    .tree-trunk::before,
+    .tree-trunk::after {
+      content: "";
+      position: absolute;
+      top: 18px;
+      width: 10px;
+      height: 75px;
+      background: #6e4732;
+      border-radius: 10px;
+    }
+
+    .tree-trunk::before {
+      left: -24px;
+      transform: rotate(-38deg);
+    }
+
+    .tree-trunk::after {
+      right: -24px;
+      transform: rotate(38deg);
+    }
+
+    .blossom-canopy {
+      position: absolute;
+      top: 10px;
+      width: 260px;
+      height: 220px;
+      pointer-events: none;
+    }
+
+    .mini-heart {
+      position: absolute;
+      font-size: 18px;
+      opacity: 0;
+      transform: scale(0.2);
+      transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .mini-heart.bloomed {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    /* SCENE 4: Cake & Candle */
+    .scene-cake {
+      background: radial-gradient(circle at center, #2d1236 0%, #16081d 100%);
+    }
+
+    .cake-wrap {
+      margin: 22px 0 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .candle {
+      width: 12px;
+      height: 44px;
+      background: repeating-linear-gradient(
+        45deg,
+        #fff,
+        #fff 6px,
+        #ff6b9d 6px,
+        #ff6b9d 12px
+      );
+      border-radius: 5px 5px 2px 2px;
+      position: relative;
+    }
+
+    .flame {
+      width: 16px;
+      height: 24px;
+      background: radial-gradient(circle at 50% 70%, #fff7ae, #ffae00 60%, #ff4d00 100%);
+      border-radius: 50% 50% 50% 50% / 65% 65% 35% 35%;
+      position: absolute;
+      top: -26px;
+      left: 50%;
+      transform: translateX(-50%) scale(0);
+      opacity: 0;
+      box-shadow: 0 0 22px #ffae00;
+      transition: transform 0.35s ease, opacity 0.35s ease;
+    }
+
+    .flame.lit {
+      transform: translateX(-50%) scale(1);
+      opacity: 1;
+      animation: flicker 0.45s infinite alternate;
+    }
+
+    @keyframes flicker {
+      from { transform: translateX(-50%) scale(1) rotate(-2deg); }
+      to { transform: translateX(-50%) scale(1.08) rotate(2deg); }
+    }
+
+    .cake-tier-top {
+      width: 150px;
+      height: 46px;
+      background: linear-gradient(180deg, #ff85b3, #ff4d8d);
+      border-radius: 14px 14px 4px 4px;
+      box-shadow: inset 0 -6px 0 rgba(255, 255, 255, 0.25);
+    }
+
+    .cake-tier-bottom {
+      width: 210px;
+      height: 62px;
+      background: linear-gradient(180deg, #8d4966, #5e2940);
+      border-radius: 10px 10px 16px 16px;
+      box-shadow: 0 14px 30px rgba(0, 0, 0, 0.45);
+    }
+
+    .cake-plate {
+      width: 250px;
+      height: 14px;
+      background: rgba(255, 255, 255, 0.22);
+      border-radius: 999px;
+      margin-top: 4px;
+    }
+
+    .cake-wish-reveal {
+      margin-top: 14px;
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--gold);
+      min-height: 24px;
+    }
+
+    /* SCENE 5: Pop the Balloons */
+    .scene-balloons {
+      background: radial-gradient(circle at center, #281133 0%, #13071a 100%);
+    }
+
+    .balloon-field {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 24px;
+      margin: 18px 0;
+      max-width: 680px;
+    }
+
+    .balloon-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      transition: transform 0.25s ease;
+    }
+
+    .balloon-item:hover {
+      transform: translateY(-6px);
+    }
+
+    .balloon-bubble {
+      width: 78px;
+      height: 94px;
+      border-radius: 50% 50% 45% 45%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 13px;
+      color: #fff;
+      box-shadow: inset -8px -10px 18px rgba(0, 0, 0, 0.22), 0 10px 24px rgba(0, 0, 0, 0.3);
+      transition: transform 0.25s ease, opacity 0.25s ease;
+    }
+
+    .balloon-string {
+      width: 2px;
+      height: 34px;
+      background: rgba(255, 255, 255, 0.35);
+    }
+
+    .balloon-item.popped .balloon-bubble {
+      transform: scale(1.35);
+      opacity: 0;
+    }
+
+    .balloon-item.popped .balloon-string {
+      opacity: 0.2;
+    }
+
+    .notes-board {
+      width: min(560px, 92vw);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 6px;
+    }
+
+    .note-pill {
+      background: rgba(255, 255, 255, 0.09);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 14px;
+      padding: 11px 16px;
+      font-size: 14px;
+      text-align: left;
+      animation: popIn 0.35s ease;
+    }
+
+    @keyframes popIn {
+      from { opacity: 0; transform: translateY(8px) scale(0.97); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* SCENE 6: Memory Lane — 6 Polaroids */
+    .scene-memories {
+      background: radial-gradient(circle at center, #2b1329 0%, #140814 100%);
+      justify-content: flex-start;
+      padding-top: 72px;
+    }
+
+    .polaroid-grid {
+      display: grid;
+      grid-template-columns: repeat(1, minmax(0, 1fr));
+      gap: 18px;
+      width: min(760px, 92vw);
+      margin: 16px auto;
+    }
+
+    @media (min-width: 540px) {
+      .polaroid-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (min-width: 820px) {
+      .polaroid-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 20px;
+      }
+    }
+
+    .polaroid {
+      background: #fffaf6;
+      color: #26141d;
+      padding: 10px 10px 14px;
+      border-radius: 8px;
+      box-shadow: 0 14px 30px rgba(0, 0, 0, 0.45);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .polaroid:nth-child(1) { transform: rotate(-2.5deg); }
+    .polaroid:nth-child(2) { transform: rotate(1.8deg); }
+    .polaroid:nth-child(3) { transform: rotate(-1.5deg); }
+    .polaroid:nth-child(4) { transform: rotate(2.2deg); }
+    .polaroid:nth-child(5) { transform: rotate(-2deg); }
+    .polaroid:nth-child(6) { transform: rotate(1.5deg); }
+
+    .polaroid:hover {
+      transform: rotate(0deg) translateY(-6px) scale(1.03);
+      box-shadow: 0 20px 40px rgba(255, 77, 141, 0.25);
+      z-index: 5;
+    }
+
+    .polaroid img {
+      width: 100%;
+      height: 145px;
+      object-fit: cover;
+      border-radius: 5px;
+      display: block;
+      background: #ead4dc;
+    }
+
+    .polaroid-caption {
+      margin-top: 8px;
+      font-family: 'Caveat', cursive;
+      font-size: 19px;
+      font-weight: 700;
+      color: #361927;
+      line-height: 1.15;
+    }
+
+    /* SCENE 7: Envelope & Letter */
+    .scene-letter {
+      background: radial-gradient(circle at center, #2a122b 0%, #130715 100%);
+    }
+
+    .envelope-box {
+      width: 240px;
+      height: 155px;
+      background: linear-gradient(135deg, #f4c95d, #d89b28);
+      border-radius: 14px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 18px 38px rgba(0, 0, 0, 0.45);
+      transition: transform 0.25s ease;
+    }
+
+    .envelope-box:hover {
+      transform: scale(1.04);
+    }
+
+    .envelope-seal {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: #e11d48;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow: 0 6px 16px rgba(225, 29, 72, 0.5);
+    }
+
+    .letter-paper {
+      display: none;
+      width: min(520px, 92vw);
+      max-height: 62vh;
+      overflow-y: auto;
+      background: #fffaf5;
+      color: #2c1622;
+      padding: 26px 24px;
+      border-radius: 18px;
+      text-align: left;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+      line-height: 1.65;
+      font-size: 15px;
+    }
+
+    .letter-paper.open {
+      display: block;
+      animation: popIn 0.4s ease;
+    }
+
+    /* SCENE 8: Finale */
+    .scene-finale {
+      background: radial-gradient(circle at center, #3b1238 0%, #120614 100%);
+    }
+
+    .finale-badge {
+      font-size: clamp(2rem, 6vw, 3.6rem);
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+
+    .finale-sub {
+      font-size: 16px;
+      color: #ffd6e7;
+      max-width: 480px;
+      margin-bottom: 18px;
+      line-height: 1.55;
+    }
+
+    /* Customize Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.76);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 16px;
+    }
+
+    .modal-backdrop.show {
+      display: flex;
+    }
+
+    .modal-card {
+      width: min(540px, 100%);
+      max-height: 86vh;
+      overflow-y: auto;
+      background: #210e24;
+      border: 1px solid var(--border-glass);
+      border-radius: 20px;
+      padding: 22px;
+      text-align: left;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+    }
+
+    .modal-section-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--rose-2);
+      margin: 16px 0 8px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .field {
+      margin-bottom: 12px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 12px;
+      color: #e5b8ce;
+      margin-bottom: 4px;
+      font-weight: 500;
+    }
+
+    .field input[type="text"],
+    .field textarea {
+      width: 100%;
+      padding: 9px 11px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      font-family: inherit;
+      font-size: 13px;
+    }
+
+    .upload-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .upload-label-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      background: rgba(255, 77, 141, 0.25);
+      border: 1px solid rgba(255, 77, 141, 0.5);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s ease;
+    }
+
+    .upload-label-btn:hover {
+      background: rgba(255, 77, 141, 0.45);
+    }
+
+    .thumb-preview {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      object-fit: cover;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      background: rgba(255, 255, 255, 0.1);
+      flex-shrink: 0;
+    }
+
+    .memory-edit-box {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 10px 12px;
+      margin-bottom: 10px;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 16px;
+      position: sticky;
+      bottom: -22px;
+      background: #210e24;
+      padding: 12px 0 4px;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="sparkle-canvas"></canvas>
+
+  <!-- Navigation & Customization Bar -->
+  <nav class="topbar" aria-label="Scene navigation">
+    <button class="top-btn" id="prev-btn">← Prev</button>
+    <div id="dots-container" class="flex gap-1.5 items-center"></div>
+    <button class="top-btn" id="next-btn">Next →</button>
+    <button class="top-btn" id="open-custom-btn">✎ Customize</button>
+  </nav>
+
+  <main class="stage-container">
+    <!-- Scene 1: Pull & Release Heart Launcher -->
+    <section class="scene scene-pull active" id="scene-0">
+      <p class="pull-sub" id="pull-subtitle">a little something, for you</p>
+      <div class="pull-arena" id="pull-arena">
+        <div class="pull-anchor"></div>
+        <div class="pull-line" id="pull-line"></div>
+        <div class="heart-orb" id="heart-orb" title="Drag and release">💗</div>
+      </div>
+      <p class="pull-hint">Pull &amp; release the heart</p>
+    </section>
+
+    <!-- Scene 2: Make a Wish Banner + 1 Main Photo -->
+    <section class="scene scene-banner" id="scene-1">
+      <div class="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-10 max-w-4xl w-full px-4">
+        <!-- Main Portrait Photo Frame -->
+        <div class="main-photo-frame">
+          <img
+            id="main-hbd-photo"
+            src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=600&q=80"
+            alt="Birthday Star"
+            onerror="this.src='https://placehold.co/400x500/ff85b3/ffffff?text=Happy+Birthday'"
+          />
+          <span class="main-photo-badge" id="main-photo-tag">✨ Birthday Star</span>
+        </div>
+
+        <!-- Animated Wish Banner Text -->
+        <div class="flex flex-col items-center md:items-start text-center md:text-left">
+          <p class="wish-kicker">make a wish...</p>
+          <h1 class="wish-title" id="wish-typewriter"></h1>
+          <p class="wish-caption" id="wish-subtext">to someone worth celebrating every single day</p>
+          <button class="btn-primary" onclick="goToScene(2)">Continue →</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Scene 3: Heart Blossom Tree -->
+    <section class="scene scene-tree" id="scene-2">
+      <div class="flex flex-col md:flex-row items-center justify-center gap-7 max-w-4xl w-full">
+        <div class="tree-card-left">
+          <p class="tag">It's officially your day</p>
+          <h2 id="tree-heading">Happy Birthday,<br />Ananya</h2>
+          <p id="tree-sub">May every day bring a little more warmth, laughter, and joy into your world.</p>
+          <button class="btn-primary" onclick="goToScene(3)">Light the Cake 🎂</button>
+        </div>
+        <div class="tree-visual">
+          <div class="blossom-canopy" id="blossom-canopy"></div>
+          <div class="tree-trunk" id="tree-trunk"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Scene 4: Cake & Candle -->
+    <section class="scene scene-cake" id="scene-3">
+      <p class="wish-kicker">first things first 🎂</p>
+      <div class="cake-wrap">
+        <div class="candle">
+          <div class="flame" id="candle-flame"></div>
+        </div>
+        <div class="cake-tier-top"></div>
+        <div class="cake-tier-bottom"></div>
+        <div class="cake-plate"></div>
+      </div>
+      <p class="cake-wish-reveal" id="cake-status">Tap below to light the candle and make your wish</p>
+      <button class="btn-primary" id="light-candle-btn">Light Candle ✨</button>
+      <button class="btn-secondary" onclick="goToScene(4)">Pop Balloons 🎈</button>
+    </section>
+
+    <!-- Scene 5: Pop the Balloons -->
+    <section class="scene scene-balloons" id="scene-4">
+      <h2 class="text-2xl font-bold">Pop the balloons 🎈</h2>
+      <p class="text-xs opacity-80 mt-1">Tap each balloon to reveal a personal note</p>
+      <div class="balloon-field" id="balloon-field"></div>
+      <div class="notes-board" id="notes-board"></div>
+      <button class="btn-primary" onclick="goToScene(5)">Memory Lane (6 Photos) 📸</button>
+    </section>
+
+    <!-- Scene 6: Memory Lane — 6 Polaroids -->
+    <section class="scene scene-memories" id="scene-5">
+      <h2 class="text-2xl font-bold">A walk down memory lane</h2>
+      <p class="text-xs opacity-75 mt-1">6 favorite moments captured forever</p>
+      <div class="polaroid-grid" id="polaroid-grid"></div>
+      <button class="btn-primary mb-4" onclick="goToScene(6)">Open Letter 💌</button>
+    </section>
+
+    <!-- Scene 7: Envelope & Letter -->
+    <section class="scene scene-letter" id="scene-6">
+      <div class="envelope-box" id="envelope-box" title="Click to open letter">
+        <div class="envelope-seal">💌</div>
+      </div>
+      <p id="envelope-hint" class="mt-3.5 text-xs opacity-80">Tap the golden envelope to read your letter</p>
+      <div class="letter-paper" id="letter-paper">
+        <div id="letter-typed"></div>
+        <button class="btn-primary" id="to-finale-btn" style="display:none;" onclick="goToScene(7)">Final Celebration 🎉</button>
+      </div>
+    </section>
+
+    <!-- Scene 8: Finale -->
+    <section class="scene scene-finale" id="scene-7">
+      <div class="finale-badge" id="finale-title">HAPPY BIRTHDAY, ANANYA!</div>
+      <p class="finale-sub" id="finale-message">Wishing you a year filled with laughter, growth, and unforgettable moments.</p>
+      <button class="btn-primary" onclick="goToScene(0)">Replay Experience ↺</button>
+    </section>
+  </main>
+
+  <!-- Customization Modal (Supports Direct File Upload + Image URLs) -->
+  <div class="modal-backdrop" id="custom-modal">
+    <div class="modal-card">
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="text-lg font-bold">Customize Birthday Experience</h3>
+        <button class="text-xs opacity-70 hover:opacity-100" id="close-custom-top">✕</button>
+      </div>
+      <p class="text-xs text-pink-200/80 mb-3">Upload photos directly from your device or paste any image link.</p>
+
+      <!-- General Info -->
+      <div class="modal-section-title">Recipient &amp; Main HBD Photo</div>
+      <div class="field">
+        <label for="inp-name">Recipient Name</label>
+        <input type="text" id="inp-name" />
+      </div>
+      <div class="field">
+        <label for="inp-wish-sub">HBD Banner Subtext</label>
+        <input type="text" id="inp-wish-sub" />
+      </div>
+      <div class="field">
+        <label>Main HBD Message Photo (1 Portrait Photo)</label>
+        <div class="upload-row mb-2">
+          <img id="prev-main-img" class="thumb-preview" alt="Main preview" />
+          <label class="upload-label-btn">
+            📁 Upload Photo
+            <input type="file" accept="image/*" id="file-main-img" class="hidden" />
+          </label>
+          <span class="text-xs opacity-60">or paste URL below:</span>
+        </div>
+        <input type="text" id="inp-main-img" placeholder="https://..." />
+      </div>
+
+      <!-- 6 Memories -->
+      <div class="modal-section-title">Memory Lane (6 Polaroid Photos)</div>
+      <div id="memories-editor-list"></div>
+
+      <!-- Cake & Balloons -->
+      <div class="modal-section-title">Cake Wish &amp; Balloon Notes</div>
+      <div class="field">
+        <label for="inp-wish">Cake Wish Line</label>
+        <input type="text" id="inp-wish" />
+      </div>
+      <div class="field">
+        <label for="inp-b1">Balloon 1 Note</label>
+        <input type="text" id="inp-b1" />
+      </div>
+      <div class="field">
+        <label for="inp-b2">Balloon 2 Note</label>
+        <input type="text" id="inp-b2" />
+      </div>
+      <div class="field">
+        <label for="inp-b3">Balloon 3 Note</label>
+        <input type="text" id="inp-b3" />
+      </div>
+
+      <!-- Personal Letter -->
+      <div class="modal-section-title">Personal Envelope Letter</div>
+      <div class="field">
+        <label for="inp-letter">Letter Message</label>
+        <textarea id="inp-letter" rows="5"></textarea>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-secondary" style="margin-top:0;" id="close-custom-btn">Cancel</button>
+        <button class="btn-primary" style="margin-top:0;" id="save-custom-btn">Save &amp; Apply</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const state = {
+      name: "Ananya",
+      wishSubtext: "to someone worth celebrating every single day",
+      mainPhoto: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=600&q=80",
+      cakeWish: "May all your wishes come true ✨",
+      balloons: [
+        { label: "Pop 1", color: "#ff5c8a", note: "Your laugh is always my favorite sound." },
+        { label: "Pop 2", color: "#8b5cf6", note: "Thank you for making ordinary days feel special." },
+        { label: "Pop 3", color: "#06b6d4", note: "Here is to big dreams and bright adventures ahead." }
+      ],
+      memories: [
+        {
+          img: "https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=600&q=80",
+          caption: "Golden hour vibes ✨"
+        },
+        {
+          img: "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=600&q=80",
+          caption: "Celebrating you 🥳"
+        },
+        {
+          img: "https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?auto=format&fit=crop&w=600&q=80",
+          caption: "Sweetest moments 🎂"
+        },
+        {
+          img: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=600&q=80",
+          caption: "Endless laughter 💛"
+        },
+        {
+          img: "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=600&q=80",
+          caption: "Unforgettable nights 🌟"
+        },
+        {
+          img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80",
+          caption: "Chasing sunsets 🌊"
+        }
+      ],
+      letter:
+        "Happy Birthday!\n\nI don't think I say it often enough, but having you around has been one of the brightest parts of my journey.\n\nThank you for your kindness, your patience, and every smile you bring along.\n\nNo matter how busy life gets, always remember you are truly appreciated."
+    };
+
+    const TOTAL_SCENES = 8;
+    let currentScene = 0;
+
+    // Build top navigation dots
+    const dotsContainer = document.getElementById("dots-container");
+    for (let i = 0; i < TOTAL_SCENES; i++) {
+      const dot = document.createElement("button");
+      dot.className = "step-dot" + (i === 0 ? " active" : "");
+      dot.setAttribute("aria-label", `Go to scene ${i + 1}`);
+      dot.addEventListener("click", () => goToScene(i));
+      dotsContainer.appendChild(dot);
+    }
+
+    function goToScene(index) {
+      currentScene = (index + TOTAL_SCENES) % TOTAL_SCENES;
+      document.querySelectorAll(".scene").forEach((el, idx) => {
+        el.classList.toggle("active", idx === currentScene);
+      });
+      document.querySelectorAll(".step-dot").forEach((dot, idx) => {
+        dot.classList.toggle("active", idx === currentScene);
+      });
+
+      if (currentScene === 1) {
+        syncBannerPhoto();
+        startWishTypewriter();
+      }
+      if (currentScene === 2) growHeartTree();
+      if (currentScene === 4) renderBalloons();
+      if (currentScene === 5) renderMemories();
+      if (currentScene === 6) resetLetter();
+      if (currentScene === 7) spawnConfettiBurst(95);
+    }
+
+    document.getElementById("prev-btn").addEventListener("click", () => goToScene(currentScene - 1));
+    document.getElementById("next-btn").addEventListener("click", () => goToScene(currentScene + 1));
+
+    // Scene 1: Pull & Release Heart
+    const heartOrb = document.getElementById("heart-orb");
+    const pullLine = document.getElementById("pull-line");
+    let dragging = false;
+    let dx = 0;
+    let dy = 0;
+
+    function updatePullVisual(x, y) {
+      const clampedX = Math.max(-95, Math.min(95, x));
+      const clampedY = Math.max(-95, Math.min(95, y));
+      dx = clampedX;
+      dy = clampedY;
+      heartOrb.style.transform = `translate(${dx}px, ${dy}px) scale(${1 + Math.hypot(dx, dy) / 360})`;
+
+      const dist = Math.hypot(dx, dy);
+      if (dist > 8) {
+        pullLine.style.display = "block";
+        pullLine.style.width = `${dist}px`;
+        pullLine.style.transform = `rotate(${Math.atan2(dy, dx)}rad)`;
+      } else {
+        pullLine.style.display = "none";
+      }
+    }
+
+    heartOrb.addEventListener("pointerdown", (e) => {
+      dragging = true;
+      heartOrb.setPointerCapture(e.pointerId);
+      const rect = heartOrb.getBoundingClientRect();
+      heartOrb.dataset.startX = e.clientX - (rect.left + rect.width / 2 - dx);
+      heartOrb.dataset.startY = e.clientY - (rect.top + rect.height / 2 - dy);
+    });
+
+    heartOrb.addEventListener("pointermove", (e) => {
+      if (!dragging) return;
+      updatePullVisual(
+        e.clientX - Number(heartOrb.dataset.startX),
+        e.clientY - Number(heartOrb.dataset.startY)
+      );
+    });
+
+    function releaseHeart() {
+      if (!dragging) return;
+      dragging = false;
+      const dist = Math.hypot(dx, dy);
+      pullLine.style.display = "none";
+      heartOrb.style.transform = "translate(0px, 0px) scale(1)";
+      dx = 0;
+      dy = 0;
+      if (dist > 26) {
+        spawnConfettiBurst(40);
+        setTimeout(() => goToScene(1), 240);
+      }
+    }
+
+    heartOrb.addEventListener("pointerup", releaseHeart);
+    heartOrb.addEventListener("pointercancel", releaseHeart);
+
+    // Scene 2: Wish Typewriter & Main Portrait Photo
+    function syncBannerPhoto() {
+      const imgEl = document.getElementById("main-hbd-photo");
+      imgEl.src = state.mainPhoto;
+      document.getElementById("main-photo-tag").textContent = `✨ ${state.name}`;
+      document.getElementById("wish-subtext").textContent = state.wishSubtext;
+    }
+
+    let wishTimer = null;
+    function startWishTypewriter() {
+      clearInterval(wishTimer);
+      const target = document.getElementById("wish-typewriter");
+      const fullText = `Happy Birthday, ${state.name}!`;
+      target.textContent = "";
+      let i = 0;
+      wishTimer = setInterval(() => {
+        target.textContent += fullText[i];
+        i++;
+        if (i >= fullText.length) clearInterval(wishTimer);
+      }, 75);
+    }
+
+    // Scene 3: Heart Blossom Tree
+    function growHeartTree() {
+      document.getElementById("tree-heading").innerHTML = `Happy Birthday,<br />${escapeHtml(state.name)}`;
+      const trunk = document.getElementById("tree-trunk");
+      const canopy = document.getElementById("blossom-canopy");
+      trunk.style.height = "0px";
+      canopy.innerHTML = "";
+
+      requestAnimationFrame(() => {
+        trunk.style.height = "150px";
+      });
+
+      const heartCoords = [
+        [45, 55], [72, 32], [102, 22], [130, 38], [158, 22], [188, 32], [215, 55],
+        [58, 82], [86, 58], [116, 52], [130, 66], [144, 52], [174, 58], [202, 82],
+        [76, 110], [104, 88], [130, 96], [156, 88], [184, 110],
+        [96, 136], [130, 124], [164, 136],
+        [114, 162], [146, 162],
+        [130, 186]
+      ];
+
+      const emojis = ["💖", "🌸", "💗", "🌷"];
+      heartCoords.forEach(([left, top], idx) => {
+        const span = document.createElement("span");
+        span.className = "mini-heart";
+        span.textContent = emojis[idx % emojis.length];
+        span.style.left = `${left}px`;
+        span.style.top = `${top}px`;
+        canopy.appendChild(span);
+
+        setTimeout(() => {
+          span.classList.add("bloomed");
+        }, 420 + idx * 42);
+      });
+    }
+
+    // Scene 4: Cake & Candle
+    document.getElementById("light-candle-btn").addEventListener("click", () => {
+      const flame = document.getElementById("candle-flame");
+      const status = document.getElementById("cake-status");
+      flame.classList.add("lit");
+      status.textContent = state.cakeWish;
+      spawnConfettiBurst(45);
+    });
+
+    // Scene 5: Balloons
+    function renderBalloons() {
+      const field = document.getElementById("balloon-field");
+      const board = document.getElementById("notes-board");
+      field.innerHTML = "";
+      board.innerHTML = "";
+
+      state.balloons.forEach((b) => {
+        const wrap = document.createElement("div");
+        wrap.className = "balloon-item";
+
+        const bubble = document.createElement("div");
+        bubble.className = "balloon-bubble";
+        bubble.style.background = b.color;
+        bubble.textContent = b.label;
+
+        const string = document.createElement("div");
+        string.className = "balloon-string";
+
+        wrap.appendChild(bubble);
+        wrap.appendChild(string);
+
+        wrap.addEventListener("click", () => {
+          if (wrap.classList.contains("popped")) return;
+          wrap.classList.add("popped");
+          const note = document.createElement("div");
+          note.className = "note-pill";
+          note.textContent = `🎈 ${b.note}`;
+          board.appendChild(note);
+          spawnConfettiBurst(16);
+        });
+
+        field.appendChild(wrap);
+      });
+    }
+
+    // Scene 6: Memory Lane (6 Polaroids)
+    function renderMemories() {
+      const grid = document.getElementById("polaroid-grid");
+      grid.innerHTML = "";
+      state.memories.forEach((m, index) => {
+        const card = document.createElement("div");
+        card.className = "polaroid";
+        card.innerHTML = `
+          <img
+            src="${escapeAttr(m.img)}"
+            alt="${escapeAttr(m.caption)}"
+            onerror="this.src='https://placehold.co/400x320/f8d7e3/7c2d4a?text=Memory+${index + 1}'"
+          />
+          <div class="polaroid-caption">${escapeHtml(m.caption)}</div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    // Scene 7: Letter
+    let letterTimer = null;
+    function resetLetter() {
+      clearInterval(letterTimer);
+      document.getElementById("envelope-box").style.display = "flex";
+      document.getElementById("envelope-hint").style.display = "block";
+      const paper = document.getElementById("letter-paper");
+      paper.classList.remove("open");
+      document.getElementById("letter-typed").textContent = "";
+      document.getElementById("to-finale-btn").style.display = "none";
+    }
+
+    document.getElementById("envelope-box").addEventListener("click", () => {
+      document.getElementById("envelope-box").style.display = "none";
+      document.getElementById("envelope-hint").style.display = "none";
+      const paper = document.getElementById("letter-paper");
+      const typedEl = document.getElementById("letter-typed");
+      const finaleBtn = document.getElementById("to-finale-btn");
+      paper.classList.add("open");
+
+      const full = `Dear ${state.name},\n\n${state.letter}`;
+      let i = 0;
+      letterTimer = setInterval(() => {
+        typedEl.innerHTML = escapeHtml(full.slice(0, i)).replace(/\n/g, "<br />");
+        i++;
+        if (i > full.length) {
+          clearInterval(letterTimer);
+          finaleBtn.style.display = "inline-block";
+        }
+      }, 20);
+    });
+
+    function syncFinale() {
+      document.getElementById("finale-title").textContent = `HAPPY BIRTHDAY, ${state.name.toUpperCase()}!`;
+    }
+
+    // Helper: Convert local uploaded file to Data URL
+    function bindFileUpload(fileInputId, urlInputId, previewImgId) {
+      const fileInput = document.getElementById(fileInputId);
+      const urlInput = document.getElementById(urlInputId);
+      const previewImg = document.getElementById(previewImgId);
+
+      fileInput.addEventListener("change", (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          urlInput.value = ev.target.result;
+          previewImg.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+
+      urlInput.addEventListener("input", () => {
+        previewImg.src = urlInput.value.trim();
+      });
+    }
+
+    // Build 6 Memory Editor Rows inside Customize Modal
+    const memoriesEditorList = document.getElementById("memories-editor-list");
+    for (let i = 0; i < 6; i++) {
+      const box = document.createElement("div");
+      box.className = "memory-edit-box";
+      box.innerHTML = `
+        <div class="text-xs font-semibold text-pink-200 mb-1.5">Memory #${i + 1}</div>
+        <div class="upload-row mb-2">
+          <img id="prev-mem-${i}" class="thumb-preview" alt="Memory ${i + 1}" />
+          <label class="upload-label-btn">
+            📁 Upload Photo
+            <input type="file" accept="image/*" id="file-mem-${i}" class="hidden" />
+          </label>
+        </div>
+        <div class="field" style="margin-bottom:8px;">
+          <input type="text" id="inp-mem-img-${i}" placeholder="Image URL or uploaded data..." />
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <input type="text" id="inp-mem-cap-${i}" placeholder="Caption for Memory #${i + 1}" />
+        </div>
+      `;
+      memoriesEditorList.appendChild(box);
+      bindFileUpload(`file-mem-${i}`, `inp-mem-img-${i}`, `prev-mem-${i}`);
+    }
+
+    bindFileUpload("file-main-img", "inp-main-img", "prev-main-img");
+
+    // Open & Close Customize Modal
+    const modal = document.getElementById("custom-modal");
+    document.getElementById("open-custom-btn").addEventListener("click", () => {
+      document.getElementById("inp-name").value = state.name;
+      document.getElementById("inp-wish-sub").value = state.wishSubtext;
+      document.getElementById("inp-main-img").value = state.mainPhoto;
+      document.getElementById("prev-main-img").src = state.mainPhoto;
+
+      for (let i = 0; i < 6; i++) {
+        document.getElementById(`inp-mem-img-${i}`).value = state.memories[i].img;
+        document.getElementById(`prev-mem-${i}`).src = state.memories[i].img;
+        document.getElementById(`inp-mem-cap-${i}`).value = state.memories[i].caption;
+      }
+
+      document.getElementById("inp-wish").value = state.cakeWish;
+      document.getElementById("inp-b1").value = state.balloons[0].note;
+      document.getElementById("inp-b2").value = state.balloons[1].note;
+      document.getElementById("inp-b3").value = state.balloons[2].note;
+      document.getElementById("inp-letter").value = state.letter;
+      modal.classList.add("show");
+    });
+
+    function closeModal() {
+      modal.classList.remove("show");
+    }
+
+    document.getElementById("close-custom-btn").addEventListener("click", closeModal);
+    document.getElementById("close-custom-top").addEventListener("click", closeModal);
+
+    document.getElementById("save-custom-btn").addEventListener("click", () => {
+      state.name = document.getElementById("inp-name").value.trim() || "Friend";
+      state.wishSubtext = document.getElementById("inp-wish-sub").value.trim() || state.wishSubtext;
+      state.mainPhoto = document.getElementById("inp-main-img").value.trim() || state.mainPhoto;
+
+      for (let i = 0; i < 6; i++) {
+        const imgVal = document.getElementById(`inp-mem-img-${i}`).value.trim();
+        const capVal = document.getElementById(`inp-mem-cap-${i}`).value.trim();
+        if (imgVal) state.memories[i].img = imgVal;
+        state.memories[i].caption = capVal || `Memory #${i + 1}`;
+      }
+
+      state.cakeWish = document.getElementById("inp-wish").value.trim() || "Happy Birthday ✨";
+      state.balloons[0].note = document.getElementById("inp-b1").value.trim() || state.balloons[0].note;
+      state.balloons[1].note = document.getElementById("inp-b2").value.trim() || state.balloons[1].note;
+      state.balloons[2].note = document.getElementById("inp-b3").value.trim() || state.balloons[2].note;
+      state.letter = document.getElementById("inp-letter").value;
+
+      syncBannerPhoto();
+      syncFinale();
+      growHeartTree();
+      renderMemories();
+      if (currentScene === 1) startWishTypewriter();
+      closeModal();
+    });
+
+    // Ambient Floating Sparkles & Confetti Burst Canvas
+    const canvas = document.getElementById("sparkle-canvas");
+    const ctx = canvas.getContext("2d");
+    let confetti = [];
+    let ambientSparkles = [];
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+
+    for (let i = 0; i < 28; i++) {
+      ambientSparkles.push({
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
+        r: 1 + Math.random() * 2.2,
+        vy: -0.2 - Math.random() * 0.45,
+        alpha: 0.25 + Math.random() * 0.55
+      });
+    }
+
+    function spawnConfettiBurst(count = 40) {
+      const colors = ["#ff4d8d", "#ffd166", "#72efdd", "#c77dff", "#ff9ebb"];
+      for (let i = 0; i < count; i++) {
+        confetti.push({
+          x: window.innerWidth / 2 + (Math.random() - 0.5) * 140,
+          y: window.innerHeight / 2 + (Math.random() - 0.5) * 80,
+          vx: (Math.random() - 0.5) * 8.5,
+          vy: (Math.random() - 0.85) * 7.5,
+          size: 4 + Math.random() * 5,
+          color: colors[i % colors.length],
+          alpha: 1,
+          life: 65 + Math.random() * 35
+        });
+      }
+    }
+
+    function animateCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Ambient sparkles
+      for (const s of ambientSparkles) {
+        s.y += s.vy;
+        if (s.y < -10) {
+          s.y = canvas.height + 10;
+          s.x = Math.random() * canvas.width;
+        }
+        ctx.globalAlpha = s.alpha;
+        ctx.fillStyle = "#ffd6e7";
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Confetti burst particles
+      confetti = confetti.filter((p) => p.life > 0);
+      for (const p of confetti) {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.14;
+        p.life--;
+        p.alpha = Math.max(0, p.life / 90);
+        ctx.globalAlpha = p.alpha;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.globalAlpha = 1;
+      requestAnimationFrame(animateCanvas);
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function escapeAttr(str) {
+      return escapeHtml(str).replace(/'/g, "&#39;");
+    }
+
+    window.onload = function () {
+      syncBannerPhoto();
+      syncFinale();
+      renderMemories();
+      animateCanvas();
+    };
+  </script>
+</body>
+</html>
